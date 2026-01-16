@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Disease Risk Prediction System - CHUB</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6d6e6e;
+            --secondary-color: #afcadc;
+            --success-color: #343f39;
+            --warning-color: #b3ae9b;
+            --orange-color: #86786c;
+            --danger-color: #533c3a;
+            --critical-color: #342b37;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .card-body {
+            padding: 30px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn-predict {
+            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            color: white;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn-predict:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .result-card {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .result-card.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .prediction-result {
+            text-align: center;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .prediction-class {
+            font-size: 2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .confidence-badge {
+            font-size: 1.3rem;
+            padding: 10px 25px;
+            border-radius: 50px;
+            display: inline-block;
+        }
+        
+        .probability-bar {
+            height: 30px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+            background: #ecf0f1;
+        }
+        
+        .probability-fill {
+            height: 100%;
+            border-radius: 15px;
+            transition: width 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .probability-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .risk-no-disease { background-color: var(--success-color); }
+        .risk-very-mild { background-color: var(--warning-color); }
+        .risk-mild { background-color: var(--orange-color); }
+        .risk-severe { background-color: var(--danger-color); }
+        .risk-immediate-danger { background-color: var(--critical-color); }
+        
+        .loading-spinner {
+            display: none;
+        }
+        
+        .loading-spinner.show {
+            display: inline-block;
+        }
+        
+        .input-group-text {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 10px 0 0 10px;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--secondary-color);
+        }
+        
+        .error-message {
+            display: none;
+            color: var(--danger-color);
+            background: #ffeaea;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card-body {
+                padding: 20px;
+            }
+            
+            .prediction-class {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-heartbeat"></i> Heart Disease Risk Prediction</h1>
+            <p>CHUB - Clinical Decision Support System</p>
+        </div>
+        
+        <!-- Input Form -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-md"></i> Patient Information
+            </div>
+            <div class="card-body">
+                <form id="predictionForm">
+                    <!-- Demographics -->
+                    <h5 class="section-title"><i class="fas fa-user"></i> Demographics</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Age</label>
+                            <input type="number" class="form-control" id="age" name="age" 
+                                   placeholder="" min="1" max="120" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sex</label>
+                            <select class="form-select" id="sex" name="sex" required>
+                                <option value=""></option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Vital Signs -->
+                    <h5 class="section-title"><i class="fas fa-stethoscope"></i> Vital Signs & Blood Work</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Resting Blood Pressure (mm Hg)</label>
+                            <input type="number" class="form-control" id="trestbps" name="trestbps" 
+                                   placeholder="" min="50" max="250" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Cholesterol (mg/dl)</label>
+                            <input type="number" class="form-control" id="chol" name="chol" 
+                                   placeholder="" min="100" max="600" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Fasting Blood Sugar > 120 mg/dl</label>
+                            <select class="form-select" id="fbs" name="fbs" required>
+                                <option value=""></option>
+                                <option value="True">Yes (True)</option>
+                                <option value="False">No (False)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Cardiac Tests -->
+                    <h5 class="section-title"><i class="fas fa-heart"></i> Cardiac Assessment</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Chest Pain Type</label>
+                            <select class="form-select" id="cp" name="cp" required>
+                                <option value=""></option>
+                                <option value="Typical Angina">Typical Angina</option>
+                                <option value="Atypical Angina">Atypical Angina</option>
+                                <option value="Non-Anginal Pain">Non-Anginal Pain</option>
+                                <option value="Asymptomatic">Asymptomatic</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Resting ECG Results</label>
+                            <select class="form-select" id="restecg" name="restecg" required>
+                                <option value=""></option>
+                                <option value="Normal">Normal</option>
+                                <option value="ST-T abnormality">ST-T Abnormality</option>
+                                <option value="LV hypertrophy">LV Hypertrophy</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Exercise Test -->
+                    <h5 class="section-title"><i class="fas fa-running"></i> Exercise Test Results</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Max Heart Rate Achieved</label>
+                            <input type="number" class="form-control" id="thalach" name="thalach" 
+                                   placeholder="" min="60" max="220" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Exercise Induced Angina</label>
+                            <select class="form-select" id="exang" name="exang" required>
+                                <option value=""></option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">ST Depression (oldpeak)</label>
+                            <input type="number" class="form-control" id="oldpeak" name="oldpeak" 
+                                   placeholder="" step="0.1" min="0" max="10" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Slope of ST Segment</label>
+                            <select class="form-select" id="slope" name="slope" required>
+                                <option value=""></option>
+                                <option value="Upsloping">Upsloping</option>
+                                <option value="Flat">Flat</option>
+                                <option value="Downsloping">Downsloping</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Number of Major Vessels (0-3)</label>
+                            <select class="form-select" id="ca" name="ca" required>
+                                <option value=""></option>
+                                <option value="0.0">0</option>
+                                <option value="1.0">1</option>
+                                <option value="2.0">2</option>
+                                <option value="3.0">3</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Thalassemia</label>
+                            <select class="form-select" id="thal" name="thal" required>
+                                <option value=""></option>
+                                <option value="Normal">Normal</option>
+                                <option value="Fixed defect">Fixed Defect</option>
+                                <option value="Reversible defect">Reversible Defect</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-predict" id="predictBtn">
+                            <span class="loading-spinner spinner-border spinner-border-sm me-2" role="status"></span>
+                            <i class="fas fa-diagnoses me-2"></i> Predict Heart Disease Risk
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Error Message -->
+                <div class="error-message" id="errorMessage">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <span id="errorText"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Card -->
+        <div class="card result-card" id="resultCard">
+            <div class="card-header">
+                <i class="fas fa-chart-bar"></i> Prediction Results
+            </div>
+            <div class="card-body">
+                <div class="prediction-result" id="predictionResult">
+                    <div class="prediction-class" id="predictionClass"></div>
+                    <div class="confidence-badge" id="confidenceBadge"></div>
+                </div>
+                
+                <h5 class="section-title"><i class="fas fa-percentage"></i> Class Probability Distribution</h5>
+                <div id="probabilityBars"></div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-4 text-white">
+            <p><small>© 2026 CHUB - Heart Disease Risk Prediction System</small></p>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:5000';
+        
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const predictBtn = document.getElementById('predictBtn');
+            const spinner = document.querySelector('.loading-spinner');
+            const errorMessage = document.getElementById('errorMessage');
+            const resultCard = document.getElementById('resultCard');
+            
+            // Reset UI
+            errorMessage.classList.remove('show');
+            resultCard.classList.remove('show');
+            
+            // Show loading
+            predictBtn.disabled = true;
+            spinner.classList.add('show');
+            
+            // Collect form data
+            const formData = {
+                age: parseFloat(document.getElementById('age').value),
+                sex: document.getElementById('sex').value,
+                cp: document.getElementById('cp').value,
+                trestbps: parseFloat(document.getElementById('trestbps').value),
+                chol: parseFloat(document.getElementById('chol').value),
+                fbs: document.getElementById('fbs').value,
+                restecg: document.getElementById('restecg').value,
+                thalach: parseFloat(document.getElementById('thalach').value),
+                exang: document.getElementById('exang').value,
+                oldpeak: parseFloat(document.getElementById('oldpeak').value),
+                slope: document.getElementById('slope').value,
+                ca: parseFloat(document.getElementById('ca').value),
+                thal: document.getElementById('thal').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    throw new Error(data.error || 'Prediction failed');
+                }
+            } catch (error) {
+                document.getElementById('errorText').textContent = 
+                    `Error: ${error.message}. Make sure the Flask API is running on ${API_URL}`;
+                errorMessage.classList.add('show');
+            } finally {
+                predictBtn.disabled = false;
+                spinner.classList.remove('show');
+            }
+        });
+        
+        function displayResults(data) {
+            const resultCard = document.getElementById('resultCard');
+            const predictionResult = document.getElementById('predictionResult');
+            const predictionClass = document.getElementById('predictionClass');
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            const probabilityBars = document.getElementById('probabilityBars');
+            
+            // Set prediction class and styling
+            const riskClass = data.prediction.class;
+            const riskColor = data.prediction.color;
+            
+            predictionResult.style.background = `linear-gradient(135deg, ${riskColor}20, ${riskColor}40)`;
+            predictionResult.style.border = `3px solid ${riskColor}`;
+            
+            predictionClass.textContent = riskClass;
+            predictionClass.style.color = riskColor;
+            
+            confidenceBadge.textContent = `Confidence: ${data.prediction.confidence}%`;
+            confidenceBadge.style.background = riskColor;
+            confidenceBadge.style.color = 'white';
+            
+            // Generate probability bars
+            const classColors = {
+                'no disease': '#2ecc71',
+                'very mild': '#f1c40f',
+                'mild': '#e67e22',
+                'severe': '#e74c3c',
+                'immediate danger': '#8e44ad'
+            };
+            
+            let barsHTML = '';
+            for (const [cls, prob] of Object.entries(data.probabilities)) {
+                const color = classColors[cls] || '#95a5a6';
+                barsHTML += `
+                    <div class="mb-3">
+                        <div class="probability-label">${cls.charAt(0).toUpperCase() + cls.slice(1)}</div>
+                        <div class="probability-bar">
+                            <div class="probability-fill" style="width: ${prob}%; background-color: ${color};">
+                                ${prob}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            probabilityBars.innerHTML = barsHTML;
+            
+            // Show results
+            resultCard.classList.add('show');
+            resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>
